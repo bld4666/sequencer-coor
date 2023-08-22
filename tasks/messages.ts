@@ -21,10 +21,10 @@ task("add-seq", "send a message")
     const accs = await ethers.getSigners();
     let contractAddr = taskArgs.contract;
     if (contractAddr === '') { 
-      const d = await deployments.get("L2SequencerManager");
+      const d = await deployments.get("L1SequencerManager");
       contractAddr = d.address;
     }
-    const contract = await ethers.getContractAt("L2SequencerManager", contractAddr, accs[0]);
+    const contract = await ethers.getContractAt("L1SequencerManager", contractAddr, accs[0]);
     const to = taskArgs.to;
     if (to !== '') {
       const tx = await contract.setL2Receiver(to);
@@ -46,10 +46,10 @@ task("rm-seq", "send a message")
     const accs = await ethers.getSigners();
     let contractAddr = taskArgs.contract;
     if (contractAddr === '') { 
-      const d = await deployments.get("L2SequencerManager");
+      const d = await deployments.get("L1SequencerManager");
       contractAddr = d.address;
     }
-    const contract = await ethers.getContractAt("L2SequencerManager", contractAddr, accs[0]);
+    const contract = await ethers.getContractAt("L1SequencerManager", contractAddr, accs[0]);
     const to = taskArgs.to;
     if (to !== '') {
       const tx = await contract.setL2Receiver(to);
@@ -70,13 +70,13 @@ task("get-sequencers", "")
     if (contractAddr === '') {
       let d;
       try {
-        d = await deployments.get("L2SequencerManager");
+        d = await deployments.get("L1SequencerManager");
       } catch (e) {
-        d = await deployments.get("L2MessageTaker");
+        d = await deployments.get("L2SequencerRegistry");
       }
       contractAddr = d.address;
     }
-    const contract = await ethers.getContractAt("L2SequencerManager", contractAddr);
+    const contract = await ethers.getContractAt("L1SequencerManager", contractAddr);
     const seqs = await contract.getSequencers();
     console.log("Sequencers", seqs);
   });
@@ -88,10 +88,10 @@ task("listen", "listen for event")
     const { ethers, deployments } = hre;
     let contractAddr = taskArgs.contract;
     if (contractAddr === '') {
-      const l2MessageTaker = await deployments.get("L2MessageTaker");
+      const l2MessageTaker = await deployments.get("L2SequencerRegistry");
       contractAddr = l2MessageTaker.address;
     }
-    const contract = await ethers.getContractAt("L2MessageTaker", contractAddr);
+    const contract = await ethers.getContractAt("L2SequencerRegistry", contractAddr);
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     contract.on("AddSequencer", async (data, obj) => {

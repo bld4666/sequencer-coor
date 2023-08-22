@@ -6,7 +6,7 @@ const func: DeployFunction = async function(hre: HardhatRuntimeEnvironment) {
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    await deploy('L2MessageTaker', {
+    await deploy('L2SequencerRegistry', {
         from: deployer,
         proxy: {
             proxyContract: 'OpenZeppelinTransparentProxy',

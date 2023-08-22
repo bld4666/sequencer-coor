@@ -18,7 +18,7 @@ interface IMessenger {
     ) external payable;
 }
 
-contract L2SequencerManager is Initializable, OwnableUpgradeable {
+contract L1SequencerManager is Initializable, OwnableUpgradeable {
     IMessenger public messenger;
     
     address[] public sequencers;

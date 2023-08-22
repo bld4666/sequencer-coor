@@ -27,7 +27,7 @@ library AddressAliasHelper {
     }
 }
 
-contract L2MessageTaker is Initializable {
+contract L2SequencerRegistry is Initializable {
     address public sender;
     
     address[] public sequencers;
