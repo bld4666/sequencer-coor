@@ -54,13 +54,39 @@ task("rm-seq", "send a message")
     if (to !== '') {
       const tx = await contract.setL2Receiver(to);
       console.log("Set receiver on L2 with tx hash", tx.hash);
-      return;
+      await tx.wait();
     }
     const tx = await contract.removeSequencer(taskArgs.seq);
     console.log("Sent message to L2 Receiver  with tx hash", tx.hash);
     const rc = await tx.wait();
     console.log("Receipt", rc);
   });
+
+task("set-seq", "")
+  .addOptionalParam("contract", "The contract's address", "")
+  .addOptionalParam("to", "The recipient's address", "")
+  .addOptionalParam("seq", "The sequencer's address", "")
+  .setAction(async (taskArgs: any, hre: HardhatRuntimeEnvironment) => {
+    const { ethers, deployments } = hre;
+    const accs = await ethers.getSigners();
+    let contractAddr = taskArgs.contract;
+    if (contractAddr === '') {
+      const d = await deployments.get("L1SequencerManager");
+      contractAddr = d.address;
+    }
+    const contract = await ethers.getContractAt("L1SequencerManager", contractAddr, accs[0]);
+    const to = taskArgs.to;
+    if (to !== '') {
+      const tx = await contract.setL2Receiver(to);
+      console.log("Set receiver on L2 with tx hash", tx.hash);
+      await tx.wait();
+    }
+    const tx = await contract.setSequencers([taskArgs.seq]);
+    console.log("Sent message to L2 Receiver  with tx hash", tx.hash);
+    const rc = await tx.wait();
+    console.log("Receipt", rc);
+  });
+
 
 task("get-sequencers", "")
   .addOptionalParam("contract", "The contract's address", "")

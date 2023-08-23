@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "hardhat/console.sol";
 
 library AddressAliasHelper {
     uint160 constant offset = uint160(0x1111000000000000000000000000000000001111);
@@ -32,16 +33,18 @@ contract L2SequencerRegistry is Initializable {
     
     address[] public sequencers;
     mapping(address => bool) public isSequencer;
+    uint256 totalAvailableReward;
+    mapping(address => uint256) public rewards;
+    uint256 version;
 
     error ZeroLength();
     error InvalidSender();
     error InvalidRelayTx();
     error SequencerExists();
     error SequencerNotExists();
+    error AlreadyUpgraded();
+    error WithdrawRewardFailed();
 
-
-    event Debug(string _message);
-    event DebugAddress(address _addr);
     event AddSequencer(address);
     event RemoveSequencer(address);
 
@@ -49,12 +52,36 @@ contract L2SequencerRegistry is Initializable {
         sender = AddressAliasHelper.applyL1ToL2Alias(_l1sender);
     }
 
+    receive() external payable {}
+
+    function deposit() external payable {}
+
     modifier onlySender() {
         if (msg.sender != tx.origin) revert InvalidRelayTx();
         if (msg.sender != sender) revert InvalidSender();
         _;
     }
 
+    modifier checkReward() {
+        if (totalAvailableReward < address(this).balance) {
+            uint256 rewardToDistribute = address(this).balance - totalAvailableReward;
+            for (uint256 i = 0; i < sequencers.length; i++) {
+                rewards[sequencers[i]] += rewardToDistribute / sequencers.length;
+            }
+            totalAvailableReward = address(this).balance;
+        }
+        _;
+    }
+
+    function withdrawReward() external {
+        uint256 reward = rewards[msg.sender];
+        rewards[msg.sender] = 0;
+        totalAvailableReward -= reward;
+        (bool success, ) = address(msg.sender).call{value: reward}("");
+        if (!success) {
+            revert WithdrawRewardFailed();
+        }
+    }
 
     function addSequencer_(address s) internal {
         if (isSequencer[s]) revert SequencerExists();
@@ -65,7 +92,7 @@ contract L2SequencerRegistry is Initializable {
         emit AddSequencer(s);
     }
 
-    function addSequencer(address s) external onlySender {
+    function addSequencer(address s) external onlySender checkReward {
         addSequencer_(s);
     }
 
@@ -88,14 +115,14 @@ contract L2SequencerRegistry is Initializable {
        return sequencers;
     }
 
-    function setSequencers(address[] memory s) external onlySender {
+    function setSequencers(address[] memory s) external onlySender checkReward {
         sequencers = new address[](s.length);
         for (uint256 i = 0; i < s.length; i++) {
             sequencers[i] = s[i];
         }
     }
 
-    function removeSequencer(address s) external onlySender {
+    function removeSequencer(address s) external onlySender checkReward {
         removeSequencer_(s);
     }
 }

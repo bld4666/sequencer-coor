@@ -4,9 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./L2MessageTaker.sol";
-
-
+import "./L2SequencerRegistry.sol";
 
 interface IMessenger {
     function depositTransaction(
@@ -18,6 +16,7 @@ interface IMessenger {
     ) external payable;
 }
 
+
 contract L1SequencerManager is Initializable, OwnableUpgradeable {
     IMessenger public messenger;
     
@@ -25,9 +24,6 @@ contract L1SequencerManager is Initializable, OwnableUpgradeable {
     mapping(address => bool) public isSequencer;
     address public l2receiver;
 
-
-
-    event Debug(string _message);
     event AddSequencer(address);
     event RemoveSequencer(address);
 
@@ -95,6 +91,7 @@ contract L1SequencerManager is Initializable, OwnableUpgradeable {
         for (uint256 i = 0; i < sequencers_.length; i++) {
             sequencers[i] = sequencers_[i];
         }
+        sendMessageToL2(abi.encodeWithSelector(this.setSequencers.selector, sequencers_));
     }
 
 
